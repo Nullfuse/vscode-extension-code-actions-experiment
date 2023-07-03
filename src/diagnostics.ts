@@ -32,12 +32,13 @@ export function refreshDiagnostics(context: vscode.ExtensionContext, doc: vscode
 	console.log(vscode.window.activeTextEditor?.document.uri.fsPath);
 
 	// 'py ' + '\"' + context.extensionPath + '\\src' + '\\Test copy.py' + '\"'
-	let cppcheckOutputString = exec('py' + ' ' + '\"' + path.join(context.extensionPath, 'src', 'Test.py') + '\"');
-	if (cppcheckOutputString !== undefined){
-		const cppcheckOutput = String(cppcheckOutputString).split(" ");
-		for (let i = 0; i < cppcheckOutput.length - 2; i+=2) {
-			console.log(cppcheckOutput[i] + ' ' + cppcheckOutput[i + 1] + '\n');
-			diagnostics.push(createDiagnostic(doc, cppcheckOutput[i + 1], doc.lineAt(parseInt(cppcheckOutput[i]) - 1), parseInt(cppcheckOutput[i]) - 1, 0, 0));
+	let cppcheckOutputString: string = String(exec('py' + ' ' + '\"' + path.join(context.extensionPath, 'src', 'Test copy.py') + '\"'));
+	cppcheckOutputString = cppcheckOutputString.replace('\r\n', ''); 
+	if (cppcheckOutputString !== undefined && cppcheckOutputString !== ''){
+		const cppcheckOutput = cppcheckOutputString.split(" ");
+		for (let i = 0; i < cppcheckOutput.length; i+=2) {
+			// console.log(cppcheckOutput[i] + ' ' + cppcheckOutput[i + 1] + '\n');
+			diagnostics.push(createDiagnostic(doc, cppcheckOutput[i + 1], doc.lineAt(parseInt(cppcheckOutput[i]) - 1), parseInt(cppcheckOutput[i]) - 1));
 		}
 	}
 
@@ -83,11 +84,53 @@ export function refreshDiagnostics(context: vscode.ExtensionContext, doc: vscode
 	threadDivergenceDiagnostics.set(doc.uri, diagnostics);
 }
 
-function createDiagnostic(doc: vscode.TextDocument, diagnosticCode: string, lineOfText: vscode.TextLine, lineIndex: number, startColumnNumber: number, endColumnNumber: number): vscode.Diagnostic {
-	// create range that represents, where in the document the word is
-	// const range = new vscode.Range(lineIndex, startColumnNumber, lineIndex, endColumnNumber);
+function createDiagnostic(doc: vscode.TextDocument, diagnosticCode: string, lineOfText: vscode.TextLine, lineIndex: number): vscode.Diagnostic {
+	let startingIndex;
+	let endingIndex;
+	let range;
+	if (lineOfText.text.includes('if') || lineOfText.text.includes('while') || lineOfText.text.includes('for')) {
+		startingIndex = lineOfText.text.indexOf('(');
+		++startingIndex;
+		endingIndex = lineOfText.text.lastIndexOf(')');
+		// create range that represents, where in the document the word is
+		range = new vscode.Range(lineIndex, startingIndex, lineIndex, endingIndex);
+	}else if (lineOfText.text.includes('?')) { // Short-hand if
+		startingIndex = lineOfText.text.indexOf('=');
+		++startingIndex;
+		endingIndex = lineOfText.text.indexOf('?');
+		while (lineOfText.text[startingIndex] == ' ') {
+			++startingIndex;
+		}
+		while (lineOfText.text[endingIndex - 1] == ' ') {
+			--endingIndex;
+		}
+		if (lineOfText.text[startingIndex] == '(' && lineOfText.text[endingIndex - 1] == ')') {
+			++startingIndex;
+			--endingIndex;
+		}
+		// create range that represents, where in the document the word is
+		range = new vscode.Range(lineIndex, startingIndex, lineIndex, endingIndex);
+	}else if (lineOfText.text.includes('case')) {
+		startingIndex = lineOfText.text.indexOf('case');
+		startingIndex += 4;
+		endingIndex = lineOfText.text.indexOf(':');
+		while (lineOfText.text[startingIndex] == ' ') {
+			++startingIndex;
+		}
+		while (lineOfText.text[endingIndex - 1] == ' ') {
+			--endingIndex;
+		}
+		if (lineOfText.text[startingIndex] == '(' && lineOfText.text[endingIndex - 1] == ')') {
+			++startingIndex;
+			--endingIndex;
+		}
+		// create range that represents, where in the document the word is
+		range = new vscode.Range(lineIndex, startingIndex, lineIndex, endingIndex);
+	} else {
+		range = lineOfText.range;
+	}
 
-	const diagnostic = new vscode.Diagnostic(lineOfText.range, diagnosticMessage.get(diagnosticCode) ?? '', vscode.DiagnosticSeverity.Warning);
+	const diagnostic = new vscode.Diagnostic(range, diagnosticMessage.get(diagnosticCode) ?? '', vscode.DiagnosticSeverity.Warning);
 	diagnostic.code = diagnosticCode;
 	return diagnostic;
 }
