@@ -3,36 +3,36 @@
  *--------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { subscribeToDocumentChanges, EMOJI_MENTION } from './diagnostics';
+import { subscribeToDocumentChanges, POSSIBLE_THREAD_DIVERGENCE } from './diagnostics';
 
 const COMMAND = 'code-actions-sample.command';
 
 export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
-		vscode.languages.registerCodeActionsProvider('markdown', new Emojizer(), {
-			providedCodeActionKinds: Emojizer.providedCodeActionKinds
+		vscode.languages.registerCodeActionsProvider(['cuda', 'cpp', 'cuda-cpp'], new correctCode(), {
+			providedCodeActionKinds: correctCode.providedCodeActionKinds
 		}));
 
-	const emojiDiagnostics = vscode.languages.createDiagnosticCollection("emoji");
-	context.subscriptions.push(emojiDiagnostics);
+	const threadDivergenceDiagnostics = vscode.languages.createDiagnosticCollection("threadDivergenceDiagnostics");
+	context.subscriptions.push(threadDivergenceDiagnostics);
 
-	subscribeToDocumentChanges(context, emojiDiagnostics);
+	subscribeToDocumentChanges(context, threadDivergenceDiagnostics);
 
 	context.subscriptions.push(
-		vscode.languages.registerCodeActionsProvider('markdown', new Emojinfo(), {
-			providedCodeActionKinds: Emojinfo.providedCodeActionKinds
+		vscode.languages.registerCodeActionsProvider(['cuda', 'cpp', 'cuda-cpp'], new inefficiencyInfo(), {
+			providedCodeActionKinds: inefficiencyInfo.providedCodeActionKinds
 		})
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand(COMMAND, () => vscode.env.openExternal(vscode.Uri.parse('https://unicode.org/emoji/charts-12.0/full-emoji-list.html')))
+		vscode.commands.registerCommand(COMMAND, () => vscode.env.openExternal(vscode.Uri.parse('https://cvw.cac.cornell.edu/gpu/thread_div')))
 	);
 }
 
 /**
  * Provides code actions for converting :) to a smiley emoji.
  */
-export class Emojizer implements vscode.CodeActionProvider {
+export class correctCode implements vscode.CodeActionProvider {
 
 	public static readonly providedCodeActionKinds = [
 		vscode.CodeActionKind.QuickFix
@@ -77,7 +77,7 @@ export class Emojizer implements vscode.CodeActionProvider {
 
 	private createCommand(): vscode.CodeAction {
 		const action = new vscode.CodeAction('Learn more...', vscode.CodeActionKind.Empty);
-		action.command = { command: COMMAND, title: 'Learn more about emojis', tooltip: 'This will open the unicode emoji page.' };
+		action.command = { command: COMMAND, title: 'Learn more about thread divergence', tooltip: 'This will open an informational page about thread divergence.' };
 		return action;
 	}
 }
@@ -85,7 +85,7 @@ export class Emojizer implements vscode.CodeActionProvider {
 /**
  * Provides code actions corresponding to diagnostic problems.
  */
-export class Emojinfo implements vscode.CodeActionProvider {
+export class inefficiencyInfo implements vscode.CodeActionProvider {
 
 	public static readonly providedCodeActionKinds = [
 		vscode.CodeActionKind.QuickFix
@@ -94,13 +94,13 @@ export class Emojinfo implements vscode.CodeActionProvider {
 	provideCodeActions(document: vscode.TextDocument, range: vscode.Range | vscode.Selection, context: vscode.CodeActionContext, token: vscode.CancellationToken): vscode.CodeAction[] {
 		// for each diagnostic entry that has the matching `code`, create a code action command
 		return context.diagnostics
-			.filter(diagnostic => diagnostic.code === EMOJI_MENTION)
+			.filter(diagnostic => diagnostic.code === POSSIBLE_THREAD_DIVERGENCE)
 			.map(diagnostic => this.createCommandCodeAction(diagnostic));
 	}
 
 	private createCommandCodeAction(diagnostic: vscode.Diagnostic): vscode.CodeAction {
 		const action = new vscode.CodeAction('Learn more...', vscode.CodeActionKind.QuickFix);
-		action.command = { command: COMMAND, title: 'Learn more about emojis', tooltip: 'This will open the unicode emoji page.' };
+		action.command = { command: COMMAND, title: 'Learn more about thread divergence', tooltip: 'This will open an informational page about thread divergence.' };
 		action.diagnostics = [diagnostic];
 		action.isPreferred = true;
 		return action;
