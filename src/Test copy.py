@@ -1,1 +1,0 @@
-print('10 possible_thread_divergence 13 possible_thread_divergence 16 possible_thread_divergence 28 possible_thread_divergence 28 possible_thread_divergence')
