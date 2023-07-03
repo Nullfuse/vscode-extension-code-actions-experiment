@@ -18,7 +18,9 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onLanguage:markdown"
+		"onLanguage:cuda",
+		"onLanguage:cpp",
+		"onLanguage:cuda-cpp"
 	],
 	"main": "./out/extension.js",
 	"scripts": {
