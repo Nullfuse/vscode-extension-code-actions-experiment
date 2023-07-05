@@ -92,40 +92,52 @@ function createDiagnostic(doc: vscode.TextDocument, diagnosticCode: string, line
 		startingIndex = lineOfText.text.indexOf('(');
 		++startingIndex;
 		endingIndex = lineOfText.text.lastIndexOf(')');
-		// create range that represents, where in the document the word is
-		range = new vscode.Range(lineIndex, startingIndex, lineIndex, endingIndex);
+		if (startingIndex == 0 || endingIndex == -1) {
+			range = lineOfText.range;
+		} else {
+			// create range that represents, where in the document the word is
+			range = new vscode.Range(lineIndex, startingIndex, lineIndex, endingIndex);
+		}
 	}else if (lineOfText.text.includes('?')) { // Short-hand if
 		startingIndex = lineOfText.text.indexOf('=');
 		++startingIndex;
 		endingIndex = lineOfText.text.indexOf('?');
-		while (lineOfText.text[startingIndex] == ' ') {
-			++startingIndex;
+		if (startingIndex == 0 || endingIndex == -1) {
+			range = lineOfText.range;
+		} else {
+			while (lineOfText.text[startingIndex] == ' ') {
+				++startingIndex;
+			}
+			while (lineOfText.text[endingIndex - 1] == ' ') {
+				--endingIndex;
+			}
+			if (lineOfText.text[startingIndex] == '(' && lineOfText.text[endingIndex - 1] == ')') {
+				++startingIndex;
+				--endingIndex;
+			}
+			// create range that represents, where in the document the word is
+			range = new vscode.Range(lineIndex, startingIndex, lineIndex, endingIndex);
 		}
-		while (lineOfText.text[endingIndex - 1] == ' ') {
-			--endingIndex;
-		}
-		if (lineOfText.text[startingIndex] == '(' && lineOfText.text[endingIndex - 1] == ')') {
-			++startingIndex;
-			--endingIndex;
-		}
-		// create range that represents, where in the document the word is
-		range = new vscode.Range(lineIndex, startingIndex, lineIndex, endingIndex);
 	}else if (lineOfText.text.includes('case')) {
 		startingIndex = lineOfText.text.indexOf('case');
 		startingIndex += 4;
 		endingIndex = lineOfText.text.indexOf(':');
-		while (lineOfText.text[startingIndex] == ' ') {
-			++startingIndex;
+		if (startingIndex == 3 || endingIndex == -1) {
+			range = lineOfText.range;
+		} else {
+			while (lineOfText.text[startingIndex] == ' ') {
+				++startingIndex;
+			}
+			while (lineOfText.text[endingIndex - 1] == ' ') {
+				--endingIndex;
+			}
+			if (lineOfText.text[startingIndex] == '(' && lineOfText.text[endingIndex - 1] == ')') {
+				++startingIndex;
+				--endingIndex;
+			}
+			// create range that represents, where in the document the word is
+			range = new vscode.Range(lineIndex, startingIndex, lineIndex, endingIndex);
 		}
-		while (lineOfText.text[endingIndex - 1] == ' ') {
-			--endingIndex;
-		}
-		if (lineOfText.text[startingIndex] == '(' && lineOfText.text[endingIndex - 1] == ')') {
-			++startingIndex;
-			--endingIndex;
-		}
-		// create range that represents, where in the document the word is
-		range = new vscode.Range(lineIndex, startingIndex, lineIndex, endingIndex);
 	} else {
 		range = lineOfText.range;
 	}
