@@ -114,6 +114,12 @@ function createDiagnostic(doc: vscode.TextDocument, diagnosticCode: string, addi
 			if (startingIndex == 0 || endingIndex == -1) {
 				range = lineOfText.range;
 			} else {
+				while (lineOfText.text[startingIndex] == ' ') {
+					++startingIndex;
+				}
+				while (lineOfText.text[endingIndex - 1] == ' ') {
+					--endingIndex;
+				}
 				// create range that represents, where in the document the word is
 				range = new vscode.Range(lineIndex, startingIndex, lineIndex, endingIndex);
 			}
