@@ -3,9 +3,11 @@
  *--------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { subscribeToDocumentChanges, POSSIBLE_THREAD_DIVERGENCE } from './diagnostics';
+import { subscribeToDocumentChanges, POSSIBLE_THREAD_DIVERGENCE, POSSIBLE_INACCURATE_ALLOCATION } from './diagnostics';
 
 const COMMAND = 'code-actions-sample.command';
+const COMMAND_THREAD_DIVERGENCE = 'code-actions-thread-divergence.command';
+const COMMAND_INACCURATE_ALLOCATION = 'code-actions-inaccurate-allocation.command';
 
 export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
@@ -13,10 +15,10 @@ export function activate(context: vscode.ExtensionContext) {
 			providedCodeActionKinds: correctCode.providedCodeActionKinds
 		}));
 
-	const threadDivergenceDiagnostics = vscode.languages.createDiagnosticCollection("threadDivergenceDiagnostics");
-	context.subscriptions.push(threadDivergenceDiagnostics);
+	const cppcheckDiagnostics = vscode.languages.createDiagnosticCollection("cppcheckDiagnostics");
+	context.subscriptions.push(cppcheckDiagnostics);
 
-	subscribeToDocumentChanges(context, threadDivergenceDiagnostics);
+	subscribeToDocumentChanges(context, cppcheckDiagnostics);
 
 	context.subscriptions.push(
 		vscode.languages.registerCodeActionsProvider(['cuda', 'cpp', 'cuda-cpp'], new inefficiencyInfo(), {
@@ -25,7 +27,15 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand(COMMAND, () => vscode.env.openExternal(vscode.Uri.parse('https://cvw.cac.cornell.edu/gpu/thread_div')))
+		vscode.commands.registerCommand(COMMAND, () => vscode.env.openExternal(vscode.Uri.parse('about:blank')))
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand(COMMAND_THREAD_DIVERGENCE, () => vscode.env.openExternal(vscode.Uri.parse('https://cvw.cac.cornell.edu/gpu/thread_div')))
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand(COMMAND_INACCURATE_ALLOCATION, () => vscode.env.openExternal(vscode.Uri.parse('https://cvw.cac.cornell.edu/gpu/memory_mang')))
 	);
 }
 
@@ -77,7 +87,7 @@ export class correctCode implements vscode.CodeActionProvider {
 
 	private createCommand(): vscode.CodeAction {
 		const action = new vscode.CodeAction('Learn more...', vscode.CodeActionKind.Empty);
-		action.command = { command: COMMAND, title: 'Learn more about thread divergence', tooltip: 'This will open an informational page about thread divergence.' };
+		action.command = { command: COMMAND, title: 'Learn more about [Text]', tooltip: 'This will open [Text].' };
 		return action;
 	}
 }
@@ -93,14 +103,20 @@ export class inefficiencyInfo implements vscode.CodeActionProvider {
 
 	provideCodeActions(document: vscode.TextDocument, range: vscode.Range | vscode.Selection, context: vscode.CodeActionContext, token: vscode.CancellationToken): vscode.CodeAction[] {
 		// for each diagnostic entry that has the matching `code`, create a code action command
+		// .filter(diagnostic => diagnostic.code === POSSIBLE_THREAD_DIVERGENCE)
 		return context.diagnostics
-			.filter(diagnostic => diagnostic.code === POSSIBLE_THREAD_DIVERGENCE)
 			.map(diagnostic => this.createCommandCodeAction(diagnostic));
 	}
 
 	private createCommandCodeAction(diagnostic: vscode.Diagnostic): vscode.CodeAction {
 		const action = new vscode.CodeAction('Learn more...', vscode.CodeActionKind.QuickFix);
-		action.command = { command: COMMAND, title: 'Learn more about thread divergence', tooltip: 'This will open an informational page about thread divergence.' };
+		if (diagnostic.code == POSSIBLE_THREAD_DIVERGENCE) {
+			action.command = { command: COMMAND_THREAD_DIVERGENCE, title: 'Learn more about CUDA thread divergence', tooltip: 'This will open an informational page about thread divergence.' };
+		}else if (diagnostic.code == POSSIBLE_INACCURATE_ALLOCATION) {
+			action.command = { command: COMMAND_INACCURATE_ALLOCATION, title: 'Learn more about CUDA memory allocation', tooltip: 'This will open an informational page about memory allocation.' };
+		}else{
+			action.command = { command: COMMAND, title: 'Learn more about [Text]', tooltip: 'This will open [Text].' };
+		}
 		action.diagnostics = [diagnostic];
 		action.isPreferred = true;
 		return action;
