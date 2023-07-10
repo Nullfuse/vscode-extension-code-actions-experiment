@@ -1,1 +1,1 @@
-print('10 possible_thread_divergence 13 possible_thread_divergence 16 possible_thread_divergence 28 possible_thread_divergence')
+print('10 possible_thread_divergence 6 13 possible_thread_divergence 6 16 possible_thread_divergence 6 28 possible_thread_divergence 28 35 possible_thread_divergence 35 3 possible_inaccurate_allocation 40 44 possible_inaccurate_allocation 80 45 possible_inaccurate_allocation 10 46 possible_inaccurate_allocation 10')
